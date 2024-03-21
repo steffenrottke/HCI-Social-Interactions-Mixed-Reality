@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Node.js HTML Server</title>
+  <style>
+    #download{
+        cursor: pointer;
+        background: rgba(0,0,190,0.6);
+        color: rgba(255,255,255,0.7);
+        padding: 1em;
+        border-radius: 0.5em;
+        width: 8em;
+        height: auto;
+        text-align: center;
+        font-family: Arial, Helvetica, sans-serif;
+        transition: 0.2s ease-in-out;
+        margin-bottom: 2em;
+    }
+    #download:hover{
+        background: rgba(0,0,190,0.8);
+        color: rgba(255,255,255,1);
+
+    }
+    .loader {
+        border: 16px solid #f3f3f3; /* Light grey */
+        border-top: 16px solid #3498db; /* Blue */
+        border-radius: 50%;
+        text-align: center;
+        width: 10vw;
+        height: 10vw;
+        position: absolute;
+        top: 45vh;
+        left: 45vw;
+        animation: spin 2s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+  </style>
+  <script>
+    const sources = [];
+    const urlids = [];
+    const objArr = [];
+    const results = [];
+    //Push all the posts you want to work with into "sources"
+    sources.push("https://www.reddit.com/r/oculus/comments/ymyk0y/do_people_actually_like_interacting_with_other.json");
+    sources.push("https://www.reddit.com/r/VRchat/comments/14ej3c5/what_prevents_you_from_being_more_social_on_vrchat.json");
+    sources.push("https://www.reddit.com/r/VRchat/comments/19a0vn6/people_in_vrchat_are_impossible_to_interact_with.json");
+    sources.push("https://www.reddit.com/r/VRchat/comments/15rphf7/how_does_one_actually_socialize.json");
+    sources.push("https://www.reddit.com/r/VRchat/comments/nwhchb/vrchat_makes_me_feel_like_i_have_a_social_life.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/f6944t/social_interactions_in_vr.json");
+    sources.push("https://www.reddit.com/r/Vive/comments/4iqmmh/intimacy_and_social_interaction_in_vr_we_used_our.json");
+    sources.push("https://www.reddit.com/r/Boomerhumour/comments/t4zel3/social_interaction_good_virtual_reality_bad_not.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/x8awg7/someone_should_tap_zuck_on_the_shoulder_and_tell.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/epstcy/social_anxiety_and_virtual_reality.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/rn22oc/social_vr.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/f8ebgl/extreme_social_anxiety_social_vr.json");
+    sources.push("https://www.reddit.com/r/oculus/comments/ymyk0y/do_people_actually_like_interacting_with_other.json");
+    sources.push("https://www.reddit.com/r/oculus/comments/s1yv5m/socializing_in_vr_chat.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/bjnour/vr_is_socially_awkward.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/sh9hz6/vr_for_treating_social_anxiety.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/um3941/new_to_vr_and_uhm_nervous_about_social_aspects.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/r3y26d/do_some_of_you_avoid_social_vr_and_multiplayer.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/19d8oga/just_started_getting_into_social_vr_its_good.json");
+    sources.push("https://www.reddit.com/r/VRchat/comments/kla1js/anti_social_in_both_reality_and_virtual_reality_b.json");
+    sources.push("https://www.reddit.com/r/oculus/comments/njo3sz/social_anxiety_when_playing_online_in_vr.json");
+    sources.push("https://www.reddit.com/r/Games/comments/o7s8vg/vrchat_raises_80_million_to_prepare_for_social_vr.json");
+    sources.push("https://www.reddit.com/r/ValveIndex/comments/r4u10k/do_you_use_vr_for_social_activity.json");
+    sources.push("https://www.reddit.com/r/oculus/comments/17z5q6i/mixed_reality_clubbing_is_crazy_quest_3.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/1786vc2/mixed_reality_is_a_bigger_deal_than_i_first.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/18ooxag/i_was_wrong_about_mixed_reality.json");
+    sources.push("https://www.reddit.com/r/gadgets/comments/12gho5s/changes_ahead_in_the_next_version_of_the_armys.json");
+    sources.push("https://www.reddit.com/r/virtualreality/comments/143ry50/are_vr_and_ar_harming_real_human_connection.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/17rdsbf/meta_quest_3_mixed_reality.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/uo1v81/meta_project_cambria_mixed_reality_headset.json");
+    sources.push("https://www.reddit.com/r/OculusQuest/comments/13yif1u/an_early_look_at_some_mixed_reality_experiences.json");
+    
+    let urlid;
+    var tags;
+    var id;
+    var filledjson;
+    var keywords;
+
+    function toggleLoader(){
+        var getLoaderStatus = document.getElementById("loader").style.display;
+        var hidden = ((getLoaderStatus == "none")?true:false);
+        if(hidden) document.getElementById("loader").style.display = "block";
+        if(!hidden) document.getElementById("loader").style.display = "none";
+    }
+
+    function startDownload(){
+        toggleLoader();
+        (async () => {
+            tags = await get()
+            if(tags.length<=0){
+                document.getElementById("tags").innerHTML = "ERROR - No Post given (Length<=0)";
+            }
+            else{
+                filledjson = JSON.stringify(tags);
+                downloadJSON(tags,id); //activate downloading
+                document.getElementById('keywords').style.display = "flex";
+                document.getElementById('keywordsbtn').style.display = "flex";
+                toggleLoader();
+            }
+        })()
+    }
+
+    async function get() {
+        for(let i=0; i<sources.length; i++){
+            let url = sources[i];
+            urlid = url;
+
+            let idFocusOn = urlid.split("/")[6]; //reddit-post-identifier
+            let idcheck = urlids.includes(idFocusOn);
+            if(!idcheck){
+                id = idFocusOn;
+                urlids.push(idFocusOn);
+                let obj = await (await fetch(url)).json();
+                objArr.push(obj);
+            }
+            else{
+                continue;
+            }
+        }
+        return objArr;
+    }
+
+    function downloadJSON(data, id) {
+        const downloadLink = document.createElement('a');
+        downloadLink.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
+        downloadLink.download = id + '.json';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+
+    function findKeywordsInJson() {
+        console.log("Initiated keyword search");
+        if (!tags || tags.length < 1) {
+            console.error("No JSON found!");
+            return;
+        }
+
+        let jsonData = tags;
+        let keywordsInput = document.getElementById('keywords').value;
+        let keywords = keywordsInput.split(",");
+        if (keywords.length < 1) {
+            console.error("No keywords found!");
+            return;
+        }
+
+        const results = {};
+        keywords.forEach(keyword => {
+            results[keyword] = [];
+        });
+
+       const processEntry = (entry, parentId) => {
+            if (entry && entry.kind && entry.data && Array.isArray(entry.data.children)) {
+                entry.data.children.forEach(child => processEntry(child, entry.data.name));
+            } else if (entry.kind === 't1' || entry.kind === 't3') {
+                const bodyText = entry.data.body;
+                const name = parentId || entry.data.name;
+
+                keywords.forEach(keyword => {
+                    if (bodyText && bodyText.includes(keyword)) {
+                        const existingEntry = results[keyword].find(entry => entry.id === name);
+                        if (existingEntry) {
+                            existingEntry.text.push(bodyText);
+                        } else {
+                            results[keyword].push({ id: name, text: [bodyText] });
+                        }
+                    }
+                });
+            }
+        };
+        jsonData.forEach(dataItem => processEntry(dataItem));
+    }
+
+    function displayextract() {
+        var texts = extractBodyFromJson(tags); // This should be an array of strings
+        var keyword = document.getElementById("keywords").value.toLowerCase(); // Get the keyword and convert it to lower case
+        var htmlContent = '';
+        let resCounter = 0;
+    
+        if (texts.length > 0 && keyword.trim() !== '') {
+            texts.forEach(function(text) {
+                if (text.toLowerCase().includes(keyword)) { // Check if the text contains the keyword
+                    ++resCounter;
+                    htmlContent += `<p>${text}</p>`; // Wrap the matching text in a paragraph
+                }
+            });
+        } else {
+            htmlContent = 'No matching texts found or no keyword provided.';
+        }
+        document.getElementById("resCounter").innerHTML = '<u>Found '+resCounter+' results including the keyword!</u>';
+        document.getElementById("tags").innerHTML = htmlContent;
+    }
+
+    function extractBodyFromJson(jsonData) {
+        let bodies = [];
+
+        function extract(data) {
+            if (Array.isArray(data)) {
+                data.forEach(item => extract(item));
+            } else if (data !== null && typeof data === 'object') {
+                Object.keys(data).forEach(key => {
+                    if (key === 'body' && typeof data[key] === 'string') {
+                        bodies.push(data[key]);
+                    } else if (typeof data[key] === 'object') {
+                        extract(data[key]);
+                    }
+                });
+            }
+        }
+        extract(jsonData);
+        return bodies;
+    }
+  </script>
+</head>
+<body>
+    <div id="download" onclick="startDownload();">Fetch Data</div>
+    <input style="display: none;" type="text" id="keywords" value="" placeholder="Enter Keyword" name="keywords" method="post" />
+    <button style="display: none; margin-bottom: 2em;" type="button" id="keywordsbtn" name="keywordsbtn" value="Find Keyword" onclick="displayextract();">Find Keyword</button>
+    <div class="loader" id="loader" style="display: none;"></div>
+    <span id="resCounter"></span>
+    <div id="tags" style=""></div>
+</body>
+</html>
